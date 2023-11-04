@@ -1,7 +1,10 @@
 name: app_api
 description: A package to use api
-version: 0.0.1
-homepage:
+version: 0.0.2
+homepage: https://uvstudio.fun/
+repository: https://github.com/ali-you/app-api-package.git
+documentation: https://github.com/ali-you/app-api-package
+issue_tracker: https://github.com/ali-you/app-api-package/issues
 
 environment:
   sdk: '>=3.1.2 <4.0.0'
@@ -10,6 +13,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  dio: ^5.3.3
+  dio_smart_retry: ^6.0.0
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:

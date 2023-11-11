@@ -6,6 +6,7 @@ import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:flutter/foundation.dart';
 
 import '../model/error_model.dart';
+import 'app_http.dart';
 
 class AppApi {
   static final AppApi _instance = AppApi._internal();
@@ -16,12 +17,14 @@ class AppApi {
 
   final _dio = Dio(BaseOptions(receiveTimeout: const Duration(seconds: 30)));
 
+  final AppHttp _appHttp = AppHttp();
+
   Future<void> getDio(
       {required String url,
-        Map<String, dynamic>? header,
-        Function(String response)? onSuccess,
-        Function(ErrorModel error)? onError,
-        int retryNumber = 1}) async {
+      Map<String, dynamic>? header,
+      Function(String response)? onSuccess,
+      Function(ErrorModel error)? onError,
+      int retryNumber = 1}) async {
     if (retryNumber > 1) {
       List<Duration> retryDelays = [];
 
@@ -39,8 +42,8 @@ class AppApi {
 
     try {
       Response response;
-      response =
-      await _dio.get(url, options: Options(responseType: ResponseType.plain, headers: header));
+      response = await _dio.get(url,
+          options: Options(responseType: ResponseType.plain, headers: header));
       if (kDebugMode) {
         print(url);
         print("status code: ${response.statusCode}");
@@ -57,13 +60,16 @@ class AppApi {
 
         case 204:
           if (onError != null) {
-            onError(ErrorModel(title: "No Content", errorStatus: ErrorStatus.noContent));
+            onError(ErrorModel(
+                title: "No Content", errorStatus: ErrorStatus.noContent));
           }
           break;
 
         default:
           if (onError != null) {
-            onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.server));
+            onError(ErrorModel(
+                title: "Server is unavailable!",
+                errorStatus: ErrorStatus.server));
           }
       }
     } on DioException catch (e) {
@@ -80,16 +86,19 @@ class AppApi {
         }
       }
       if (onError != null) {
-        onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.server));
+        onError(ErrorModel(
+            title: "Server is unavailable!", errorStatus: ErrorStatus.server));
       }
     } on TimeoutException {
       if (onError != null) {
-        onError(ErrorModel(title: "Poor connection!", errorStatus: ErrorStatus.timeout));
+        onError(ErrorModel(
+            title: "Poor connection!", errorStatus: ErrorStatus.timeout));
       }
     } on SocketException {
       if (onError != null) {
         onError(ErrorModel(
-            title: "No connection!, Check your connection!", errorStatus: ErrorStatus.socket));
+            title: "No connection!, Check your connection!",
+            errorStatus: ErrorStatus.socket));
       }
     } catch (e) {
       if (kDebugMode) {
@@ -97,19 +106,20 @@ class AppApi {
         print(e.toString());
       }
       if (onError != null) {
-        onError(ErrorModel(title: "Something wrong!", errorStatus: ErrorStatus.unknown));
+        onError(ErrorModel(
+            title: "Something wrong!", errorStatus: ErrorStatus.unknown));
       }
     }
   }
 
   Future<void> postDio(
       {required String url,
-        Map<String, dynamic>? header,
-        required Map<String, dynamic> body,
-        Function(dynamic response)? onSuccess,
-        Function(ErrorModel error)? onError,
-        ResponseType responseType = ResponseType.plain,
-        int retryNumber = 1}) async {
+      Map<String, dynamic>? header,
+      required Map<String, dynamic> body,
+      Function(dynamic response)? onSuccess,
+      Function(ErrorModel error)? onError,
+      ResponseType responseType = ResponseType.plain,
+      int retryNumber = 1}) async {
     if (retryNumber > 1) {
       List<Duration> retryDelays = [];
 
@@ -128,7 +138,8 @@ class AppApi {
     try {
       Response response;
       response = await _dio.post(url,
-          data: body, options: Options(responseType: responseType, headers: header));
+          data: body,
+          options: Options(responseType: responseType, headers: header));
       if (kDebugMode) {
         print(url);
         print("status code: ${response.statusCode}");
@@ -145,13 +156,16 @@ class AppApi {
 
         case 204:
           if (onError != null) {
-            onError(ErrorModel(title: "No Content", errorStatus: ErrorStatus.noContent));
+            onError(ErrorModel(
+                title: "No Content", errorStatus: ErrorStatus.noContent));
           }
           break;
 
         default:
           if (onError != null) {
-            onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.server));
+            onError(ErrorModel(
+                title: "Server is unavailable!",
+                errorStatus: ErrorStatus.server));
           }
       }
     } on DioException catch (e) {
@@ -168,16 +182,19 @@ class AppApi {
         }
       }
       if (onError != null) {
-        onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.unknown));
+        onError(ErrorModel(
+            title: "Server is unavailable!", errorStatus: ErrorStatus.unknown));
       }
     } on TimeoutException {
       if (onError != null) {
-        onError(ErrorModel(title: "Poor connection!", errorStatus: ErrorStatus.timeout));
+        onError(ErrorModel(
+            title: "Poor connection!", errorStatus: ErrorStatus.timeout));
       }
     } on SocketException {
       if (onError != null) {
         onError(ErrorModel(
-            title: "No connection!, Check your connection!", errorStatus: ErrorStatus.socket));
+            title: "No connection!, Check your connection!",
+            errorStatus: ErrorStatus.socket));
       }
     } catch (e) {
       if (kDebugMode) {
@@ -185,8 +202,25 @@ class AppApi {
         print(e.toString());
       }
       if (onError != null) {
-        onError(ErrorModel(title: "Something wrong!", errorStatus: ErrorStatus.unknown));
+        onError(ErrorModel(
+            title: "Something wrong!", errorStatus: ErrorStatus.unknown));
       }
     }
+  }
+
+  Future<void> downloadHttp(
+      {required String url,
+      Map<String, dynamic>? header,
+      Function(int downloaded, double percent)? onProgress,
+      Function(List<int> data)? onDone,
+      Function(ErrorModel error)? onError,
+      bool showException = false}) async {
+    await _appHttp.download(
+        url: url,
+        header: header,
+        onProgress: onProgress,
+        onDone: onDone,
+        onError: onError,
+        showException: showException);
   }
 }

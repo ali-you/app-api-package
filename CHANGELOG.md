@@ -1,3 +1,3 @@
-## 0.0.2
+## 0.0.3
 
-* get and post methods added
+* http download method added

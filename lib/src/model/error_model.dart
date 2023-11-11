@@ -1,5 +1,4 @@
-
-enum ErrorStatus {server, timeout, socket, unknown, none, noContent}
+enum ErrorStatus { server, timeout, socket, unknown, none, noContent }
 
 class ErrorModel {
   final String title;

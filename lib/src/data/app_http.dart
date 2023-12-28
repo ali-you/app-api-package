@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../model/error_model.dart';
+import 'api_status.dart';
 
 class AppHttp {
   Future<void> download(
@@ -35,20 +36,20 @@ class AppHttp {
         });
       } else {
         onError?.call(ErrorModel(
-            title: "Server is unavailable!", errorStatus: ErrorStatus.server));
+            title: "Server is unavailable!", apiStatus: ApiStatus.serverError));
       }
     } on SocketException catch (e) {
       onError?.call(ErrorModel(
           title: "No connection!, Check your connection!",
-          errorStatus: ErrorStatus.socket));
+          apiStatus: ApiStatus.socketError));
       if (showException) throw Exception(e);
     } on TimeoutException catch (e) {
       onError?.call(ErrorModel(
-          title: "Poor connection!", errorStatus: ErrorStatus.timeout));
+          title: "Poor connection!", apiStatus: ApiStatus.timeout));
       if (showException) throw Exception(e);
     } catch (e) {
       onError?.call(ErrorModel(
-          title: "Something wrong!", errorStatus: ErrorStatus.unknown));
+          title: "Something wrong!", apiStatus: ApiStatus.unknownError));
       if (showException) throw Exception(e);
     }
   }

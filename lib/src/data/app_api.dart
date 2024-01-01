@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:io';
 
+import 'package:app_api/src/data/api_lookup.dart';
+import 'package:app_api/src/data/app_dio.dart';
 import 'package:dio/dio.dart';
-import 'package:dio_smart_retry/dio_smart_retry.dart';
-import 'package:flutter/foundation.dart';
 
+import '../../app_api.dart';
 import '../model/error_model.dart';
+import 'app_http.dart';
 
 class AppApi {
   static final AppApi _instance = AppApi._internal();
@@ -14,179 +15,65 @@ class AppApi {
 
   static AppApi get instance => _instance;
 
-  final _dio = Dio(BaseOptions(receiveTimeout: const Duration(seconds: 30)));
+  final AppHttp _appHttp = AppHttp();
+
+  final AppDio _appDio = AppDio();
+
+  final ApiLookup _apiLookup = ApiLookup();
 
   Future<void> getDio(
       {required String url,
-        Map<String, dynamic>? header,
-        Function(String response)? onSuccess,
-        Function(ErrorModel error)? onError,
-        int retryNumber = 1}) async {
-    if (retryNumber > 1) {
-      List<Duration> retryDelays = [];
-
-      for (int i = 0; i < retryNumber; i++) {
-        retryDelays.add(Duration(seconds: i + 1));
-      }
-
-      _dio.interceptors.add(RetryInterceptor(
-        dio: _dio,
-        // logPrint: print, // specify log function (optional)
-        retries: retryNumber, // retry count (optional)
-        retryDelays: retryDelays,
-      ));
-    }
-
-    try {
-      Response response;
-      response =
-      await _dio.get(url, options: Options(responseType: ResponseType.plain, headers: header));
-      if (kDebugMode) {
-        print(url);
-        print("status code: ${response.statusCode}");
-        print("response api: ${response.data.toString()}");
-      }
-
-      switch (response.statusCode) {
-        case 200:
-        case 201:
-          if (onSuccess != null) {
-            onSuccess(response.data.toString());
-          }
-          break;
-
-        case 204:
-          if (onError != null) {
-            onError(ErrorModel(title: "No Content", errorStatus: ErrorStatus.noContent));
-          }
-          break;
-
-        default:
-          if (onError != null) {
-            onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.server));
-          }
-      }
-    } on DioException catch (e) {
-      if (e.response != null) {
-        if (kDebugMode) {
-          print(e.response!.data);
-          print(e.response!.headers);
-          print(e.response!.requestOptions);
-        }
-      } else {
-        if (kDebugMode) {
-          print(e.requestOptions);
-          print(e.message);
-        }
-      }
-      if (onError != null) {
-        onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.server));
-      }
-    } on TimeoutException {
-      if (onError != null) {
-        onError(ErrorModel(title: "Poor connection!", errorStatus: ErrorStatus.timeout));
-      }
-    } on SocketException {
-      if (onError != null) {
-        onError(ErrorModel(
-            title: "No connection!, Check your connection!", errorStatus: ErrorStatus.socket));
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print(url);
-        print(e.toString());
-      }
-      if (onError != null) {
-        onError(ErrorModel(title: "Something wrong!", errorStatus: ErrorStatus.unknown));
-      }
+      Map<String, dynamic>? header,
+      Function(String? response, int? statusCode, ApiStatus apiStatus)? onSuccess,
+      Function(ErrorModel error, int? statusCode)? onError,
+      int retryNumber = 1}) async {
+    if (await _apiLookup.check) {
+      await _appDio.get(
+        url: url,
+        header: header,
+        onSuccess: onSuccess,
+        onError: onError,
+        retryNumber: retryNumber);
+    }else {
+      onError!.call(ErrorModel(title: "No internet!", apiStatus: ApiStatus.noInternet), null);
     }
   }
 
   Future<void> postDio(
       {required String url,
-        Map<String, dynamic>? header,
-        required Map<String, dynamic> body,
-        Function(dynamic response)? onSuccess,
-        Function(ErrorModel error)? onError,
-        ResponseType responseType = ResponseType.plain,
-        int retryNumber = 1}) async {
-    if (retryNumber > 1) {
-      List<Duration> retryDelays = [];
-
-      for (int i = 0; i < retryNumber; i++) {
-        retryDelays.add(Duration(seconds: i + 1));
-      }
-
-      _dio.interceptors.add(RetryInterceptor(
-        dio: _dio,
-        // logPrint: print, // specify log function (optional)
-        retries: retryNumber, // retry count (optional)
-        retryDelays: retryDelays,
-      ));
+      Map<String, dynamic>? header,
+      required Map<String, dynamic> body,
+      Function(dynamic response)? onSuccess,
+      Function(ErrorModel error)? onError,
+      ResponseType responseType = ResponseType.plain,
+      int retryNumber = 1}) async {
+    if (await _apiLookup.check) {
+      await _appDio.post(
+        url: url,
+        body: body,
+        responseType: responseType,
+        header: header,
+        onSuccess: onSuccess,
+        onError: onError,
+        retryNumber: retryNumber);
     }
+  }
 
-    try {
-      Response response;
-      response = await _dio.post(url,
-          data: body, options: Options(responseType: responseType, headers: header));
-      if (kDebugMode) {
-        print(url);
-        print("status code: ${response.statusCode}");
-        print("response api: ${response.data.toString()}");
-      }
-
-      switch (response.statusCode) {
-        case 200:
-        case 201:
-          if (onSuccess != null) {
-            onSuccess(response.data.toString());
-          }
-          break;
-
-        case 204:
-          if (onError != null) {
-            onError(ErrorModel(title: "No Content", errorStatus: ErrorStatus.noContent));
-          }
-          break;
-
-        default:
-          if (onError != null) {
-            onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.server));
-          }
-      }
-    } on DioException catch (e) {
-      if (e.response != null) {
-        if (kDebugMode) {
-          print(e.response!.data);
-          print(e.response!.headers);
-          print(e.response!.requestOptions);
-        }
-      } else {
-        if (kDebugMode) {
-          print(e.requestOptions);
-          print(e.message);
-        }
-      }
-      if (onError != null) {
-        onError(ErrorModel(title: "Server is unavailable!", errorStatus: ErrorStatus.unknown));
-      }
-    } on TimeoutException {
-      if (onError != null) {
-        onError(ErrorModel(title: "Poor connection!", errorStatus: ErrorStatus.timeout));
-      }
-    } on SocketException {
-      if (onError != null) {
-        onError(ErrorModel(
-            title: "No connection!, Check your connection!", errorStatus: ErrorStatus.socket));
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print(url);
-        print(e.toString());
-      }
-      if (onError != null) {
-        onError(ErrorModel(title: "Something wrong!", errorStatus: ErrorStatus.unknown));
-      }
+  Future<void> downloadHttp(
+      {required String url,
+      Map<String, dynamic>? header,
+      Function(int downloaded, double percent)? onProgress,
+      Function(List<int> data)? onDone,
+      Function(ErrorModel error)? onError,
+      bool showException = false}) async {
+    if (await _apiLookup.check) {
+      await _appHttp.download(
+        url: url,
+        header: header,
+        onProgress: onProgress,
+        onDone: onDone,
+        onError: onError,
+        showException: showException);
     }
   }
 }

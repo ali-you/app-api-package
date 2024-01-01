@@ -1,10 +1,9 @@
-
-enum ErrorStatus {server, timeout, socket, unknown, none, noContent}
+import '../data/api_status.dart';
 
 class ErrorModel {
   final String title;
   final String? subtitle;
-  final ErrorStatus errorStatus;
+  final ApiStatus apiStatus;
 
-  ErrorModel({required this.title, this.subtitle, required this.errorStatus});
+  ErrorModel({required this.title, this.subtitle, required this.apiStatus});
 }
